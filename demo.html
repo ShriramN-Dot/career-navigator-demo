@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Career Navigator — Product Demo</title>
+<style>
+/*═══════════ RESET & VARS ═══════════*/
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue:#0078D4;--blue-d:#005a9e;--purple:#6B69D6;--green:#107C10;
+  --amber:#FFB900;--red:#D13438;--teal:#008272;--orange:#D83B01;
+  --bg:#f5f5f5;--card:#fff;--text:#1a1a1a;--t2:#555;--t3:#888;
+  --border:#e0e0e0;--hover:#f0f6ff;--r:12px;--sh:0 2px 8px rgba(0,0,0,.08);
+  --nav-h:52px;
+}
+body{font-family:'Segoe UI Variable','Segoe UI',system-ui,sans-serif;background:#000;color:var(--text);line-height:1.5;overflow:hidden;height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;background:none;font-size:inherit}
+input,select{font-family:inherit;font-size:inherit}
+a{color:var(--blue);text-decoration:none}
+
+/*═══════════ DEMO CHROME ═══════════*/
+#demo-wrapper{position:relative;width:100vw;height:100vh;overflow:hidden}
+
+/* Title Screen */
+#title-screen{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a0a2e 0%,#1a1a4e 40%,#0078D4 100%);transition:opacity 1s,transform 1s}
+#title-screen.hide{opacity:0;transform:scale(1.05);pointer-events:none}
+.title-content{text-align:center;color:#fff;animation:fadeInUp .8s ease}
+.title-content .ms-logo{font-size:48px;margin-bottom:24px;opacity:.9}
+.title-content h1{font-size:56px;font-weight:800;margin-bottom:12px;background:linear-gradient(90deg,#fff,#a0cfff);-webkit-background-clip:text;color:transparent}
+.title-content .subtitle{font-size:22px;opacity:.7;margin-bottom:8px;font-weight:300}
+.title-content .tagline{font-size:16px;opacity:.5;margin-bottom:40px}
+.title-content .start-btn{padding:14px 40px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:30px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:all .3s;backdrop-filter:blur(10px)}
+.title-content .start-btn:hover{background:rgba(255,255,255,.25);transform:scale(1.05)}
+
+/* Narration Bar */
+#narration-bar{position:fixed;bottom:0;left:0;right:0;z-index:8000;background:linear-gradient(0deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.8) 70%,transparent 100%);padding:80px 60px 28px;transform:translateY(100%);transition:transform .5s cubic-bezier(.4,0,.2,1);pointer-events:none}
+#narration-bar.show{transform:translateY(0)}
+#narration-bar .scene-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--blue);margin-bottom:6px}
+#narration-bar .narration-text{font-size:20px;color:#fff;font-weight:400;line-height:1.6;max-width:900px}
+#narration-bar .narration-text strong{color:#60b4ff;font-weight:600}
+#narration-bar .narration-text em{color:var(--amber);font-style:normal;font-weight:600}
+
+/* Timeline */
+#timeline{position:fixed;bottom:0;left:0;right:0;z-index:8500;display:flex;align-items:center;padding:0 60px 10px;gap:4px;pointer-events:all;opacity:0;transition:opacity .5s}
+#timeline.show{opacity:1}
+.tl-dot{width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.2);cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+.tl-dot.active .tl-fill{width:100%}
+.tl-dot.current .tl-fill{animation:fillBar var(--scene-dur,6s) linear forwards}
+.tl-fill{position:absolute;inset:0;background:var(--blue);width:0;border-radius:2px}
+.tl-dot:hover{background:rgba(255,255,255,.35);transform:scaleY(2)}
+.tl-label{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:10px;color:#fff;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none;background:rgba(0,0,0,.7);padding:3px 8px;border-radius:4px}
+.tl-dot:hover .tl-label{opacity:1}
+
+/* Controls */
+#controls{position:fixed;top:16px;right:24px;z-index:8500;display:flex;gap:8px;opacity:0;transition:opacity .5s}
+#controls.show{opacity:1}
+#controls button{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);transition:all .2s}
+#controls button:hover{background:rgba(0,0,0,.7);transform:scale(1.1)}
+
+/* Chapter indicator */
+#chapter-label{position:fixed;top:16px;left:24px;z-index:8500;color:#fff;font-size:12px;font-weight:600;opacity:0;transition:opacity .5s;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.1)}
+#chapter-label.show{opacity:1}
+
+/* Spotlight / Highlight */
+.spotlight{position:fixed;z-index:7500;border:3px solid var(--blue);border-radius:12px;pointer-events:none;opacity:0;transition:all .4s cubic-bezier(.4,0,.2,1);box-shadow:0 0 0 4000px rgba(0,0,0,.35),0 0 30px rgba(0,120,212,.4)}
+.spotlight.show{opacity:1}
+
+/* Click ripple */
+.click-ripple{position:fixed;z-index:7600;width:40px;height:40px;border-radius:50%;border:3px solid var(--blue);pointer-events:none;animation:ripple .6s ease forwards}
+@keyframes ripple{0%{transform:translate(-50%,-50%) scale(0);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}
+
+/* Cursor */
+#fake-cursor{position:fixed;z-index:7600;width:20px;height:24px;pointer-events:none;opacity:0;transition:left .6s cubic-bezier(.4,0,.2,1),top .6s cubic-bezier(.4,0,.2,1),opacity .3s;transform:translate(-2px,-2px)}
+
+/* Scene transition */
+.scene-trans{position:fixed;inset:0;z-index:7000;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .4s}
+.scene-trans.show{opacity:1}
+
+/*═══════════ APPLICATION UI ═══════════*/
+#app-frame{width:100vw;height:100vh;overflow:hidden;background:var(--bg)}
+
+/* Top Nav */
+.topnav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;z-index:1000;gap:8px}
+.topnav .logo{font-weight:700;font-size:15px;color:var(--blue);margin-right:24px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.topnav .logo span{background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;color:transparent}
+.nav-tabs{display:flex;gap:3px;flex:1}
+.nav-tab{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--t2);transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.nav-tab:hover{background:var(--hover);color:var(--text)}
+.nav-tab.active{background:var(--blue);color:#fff}
+.nav-tab .badge{background:var(--red);color:#fff;font-size:10px;border-radius:10px;padding:1px 6px;font-weight:600}
+.nav-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.nav-right .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px}
+.notif-btn{position:relative;font-size:18px;padding:4px}
+.notif-btn .dot{position:absolute;top:2px;right:2px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid #fff}
+
+.main-area{margin-top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth}
+.page{display:none;padding:20px 28px;max-width:1400px;margin:0 auto}
+.page.active{display:block}
+
+/*═══════ Compact UI components ═══════*/
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
+.card-grid{display:grid;gap:12px}
+.cg2{grid-template-columns:1fr 1fr}.cg3{grid-template-columns:1fr 1fr 1fr}.cg4{grid-template-columns:1fr 1fr 1fr 1fr}
+.btn{padding:7px 16px;border-radius:8px;font-weight:600;font-size:12px;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-p{background:var(--blue);color:#fff}.btn-s{background:#f0f0f0;color:var(--text)}.btn-o{border:1.5px solid var(--blue);color:var(--blue)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-ghost{color:var(--blue);padding:3px 7px;font-size:12px}
+.chip{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:16px;font-size:11px;font-weight:500;background:#f0f0f0;color:var(--t2)}
+.chip-b{background:#e6f2ff;color:var(--blue)}.chip-g{background:#dff6dd;color:var(--green)}.chip-a{background:#fff4ce;color:#8a6d0b}.chip-r{background:#fde7e9;color:var(--red)}.chip-p{background:#efe6ff;color:var(--purple)}
+.match-badge{display:inline-flex;align-items:center;gap:3px;font-weight:700;font-size:12px;padding:3px 8px;border-radius:6px;background:linear-gradient(135deg,#dff6dd,#e6f2ff);color:var(--green)}
+.section-title{font-size:16px;font-weight:700}
+.text-sm{font-size:12px}.text-xs{font-size:11px}.text-muted{color:var(--t2)}.font-bold{font-weight:700}
+.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}
+.gap-4{gap:4px}.gap-6{gap:6px}.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}
+.mb-6{margin-bottom:6px}.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}.mt-8{margin-top:8px}.mt-12{margin-top:12px}
+.w-full{width:100%}
+.greeting{font-size:22px;font-weight:700;margin-bottom:4px}
+.greeting span{background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;color:transparent}
+
+/* Health Ring */
+.health-ring{width:100px;height:100px;position:relative;margin:0 auto 10px}
+.health-ring svg{transform:rotate(-90deg)}
+.health-ring .score{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:var(--blue)}
+.health-ring .score small{font-size:10px;font-weight:500;color:var(--t3)}
+.health-bar{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12px}
+.health-bar .bar{flex:1;height:5px;background:#eee;border-radius:3px;overflow:hidden}
+.health-bar .bar-fill{height:100%;border-radius:3px}
+
+/* Rec cards */
+.rec-card{border-left:3px solid var(--blue);padding:10px 12px;background:#fafafa;border-radius:0 var(--r) var(--r) 0;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.rec-card:hover{background:var(--hover);transform:translateX(3px)}
+
+/* Trending */
+.trending-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;border-bottom:1px solid #f0f0f0}
+.trending-item:last-child{border:none}
+.trending-item .rank{font-weight:700;color:var(--blue);min-width:20px}
+.trending-item .pct{color:var(--green);font-weight:600;font-size:11px;margin-left:auto}
+
+/* Search / Explore */
+.search-layout{display:grid;grid-template-columns:240px 1fr;gap:16px}
+.search-bar{display:flex;gap:6px;margin-bottom:16px}
+.search-bar input{flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;transition:border .15s}
+.search-bar input:focus{outline:none;border-color:var(--blue)}
+.filter-panel{max-height:calc(100vh - var(--nav-h) - 48px);overflow-y:auto;padding-right:6px}
+.filter-section{margin-bottom:14px}
+.filter-section h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);margin-bottom:6px}
+.filter-option{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px;cursor:pointer}
+.filter-option input[type=checkbox]{accent-color:var(--blue);width:14px;height:14px}
+.filter-option .count{margin-left:auto;color:var(--t3);font-size:11px}
+.active-filters{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.sort-select{padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:#fff}
+
+/* Job cards */
+.job-card{border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;background:#fff;transition:all .2s;cursor:pointer;margin-bottom:10px}
+.job-card:hover,.job-card.hl{border-color:var(--blue);box-shadow:0 3px 12px rgba(0,120,212,.12);transform:translateY(-1px)}
+.job-card .jt{font-size:14px;font-weight:700;margin-bottom:3px}
+.job-card .jm{font-size:12px;color:var(--t2);margin-bottom:8px}
+.job-card .jd{font-size:12px;color:var(--t2);margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.job-card .skills-row{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px}
+.job-card .actions{display:flex;gap:6px;align-items:center}
+
+/* Collections */
+.collection-card{border:2px dashed var(--border);border-radius:var(--r);padding:14px;text-align:center;cursor:pointer;transition:all .15s;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.collection-card:hover{border-color:var(--blue);background:var(--hover)}
+.collection-card.filled{border-style:solid;text-align:left;align-items:flex-start}
+.collection-count{font-size:24px;font-weight:800;color:var(--blue)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;display:none;align-items:flex-start;justify-content:center;padding:30px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:780px;width:100%;max-height:calc(100vh - 60px);overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:12px;right:12px;font-size:20px;color:var(--t3);z-index:10;padding:4px 8px;border-radius:6px}
+.modal-close:hover{background:#f0f0f0}
+.modal-header{padding:24px 24px 0}
+.modal-header .title{font-size:20px;font-weight:700;margin-bottom:4px}
+.modal-header .meta{font-size:13px;color:var(--t2);margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.modal-header .cta-row{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.detail-tabs{display:flex;border-bottom:2px solid var(--border);padding:0 24px;gap:0}
+.detail-tab{padding:10px 16px;font-size:13px;font-weight:600;color:var(--t2);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;transition:all .15s}
+.detail-tab:hover{color:var(--text)}
+.detail-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.detail-content{padding:20px 24px 24px}
+.detail-pane{display:none}.detail-pane.active{display:block}
+.skill-match-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.skill-match-row:last-child{border:none}
+.team-stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+.growth-path-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.growth-path-item .dot{width:10px;height:10px;border-radius:50%;border:2.5px solid var(--blue)}
+
+/* Pipeline */
+.pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.pipeline-col{background:#f8f8f8;border-radius:var(--r);padding:12px;min-height:160px}
+.pipeline-col h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.pipeline-col h4 .cnt{background:var(--blue);color:#fff;font-size:10px;border-radius:8px;padding:1px 6px}
+.pipeline-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.pipeline-card:hover,.pipeline-card.hl{border-color:var(--blue);box-shadow:var(--sh)}
+.pipeline-card .pt{font-weight:700;font-size:12px;margin-bottom:3px}
+.pipeline-card .pm{font-size:11px;color:var(--t2);margin-bottom:6px}
+.pipeline-card .pd{font-size:10px;color:var(--t3)}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.status-dot.applied{background:var(--blue)}.status-dot.screening{background:var(--amber)}.status-dot.interview{background:var(--purple)}.status-dot.decision{background:var(--green)}
+.interview-prep-card{border:2px solid var(--purple);background:linear-gradient(135deg,#f8f6ff,#fff);border-radius:var(--r);padding:16px;margin-bottom:12px}
+
+/* Mentor */
+.mentor-card{border:1px solid var(--border);border-radius:var(--r);padding:16px;background:#fff;transition:all .2s;margin-bottom:10px}
+.mentor-card:hover,.mentor-card.hl{border-color:var(--purple);box-shadow:0 3px 12px rgba(107,105,214,.12)}
+.mentor-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0}
+.why-match{background:#f8f6ff;border-radius:6px;padding:10px;font-size:12px;color:var(--t2);margin-bottom:10px;border-left:3px solid var(--purple)}
+.info-interview-card{border:1px solid var(--border);border-radius:var(--r);padding:12px;background:#fff;display:flex;gap:12px;align-items:center;margin-bottom:10px;transition:all .15s}
+.info-interview-card:hover,.info-interview-card.hl{border-color:var(--teal);box-shadow:var(--sh)}
+
+/* Schedule modal */
+.schedule-modal{background:#fff;border-radius:14px;max-width:480px;width:100%;padding:24px;position:relative}
+.time-slot{padding:8px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;text-align:center;font-size:13px;transition:all .15s}
+.time-slot:hover,.time-slot.selected{border-color:var(--blue);background:var(--hover);color:var(--blue);font-weight:600}
+
+/* Skills */
+.career-tabs{display:flex;gap:3px;margin-bottom:16px}
+.career-tab{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .15s}
+.career-tab:hover{background:#f0f0f0}
+.career-tab.active{background:var(--blue);color:#fff}
+.skill-bar{margin-bottom:10px}
+.skill-bar .label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.skill-bar .bar{height:6px;background:#eee;border-radius:3px;overflow:hidden}
+.skill-bar .fill{height:100%;border-radius:3px;transition:width .6s}
+.path-node{display:flex;gap:12px;padding:12px 0;position:relative}
+.path-node::before{content:'';position:absolute;left:15px;top:36px;bottom:0;width:2px;background:var(--border)}
+.path-node:last-child::before{display:none}
+.path-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;z-index:1}
+.path-dot.current{background:var(--blue);color:#fff}
+.path-dot.past{background:#e6f2ff;color:var(--blue)}
+.path-dot.future{background:#f0f0f0;color:var(--t3);border:2px dashed var(--border)}
+
+/* Copilot */
+.copilot-fab{position:fixed;bottom:20px;right:20px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(107,105,214,.4);z-index:900;transition:all .2s}
+.copilot-fab:hover{transform:scale(1.08)}
+.copilot-panel{position:fixed;bottom:20px;right:20px;width:380px;height:500px;background:#fff;border-radius:14px;box-shadow:0 8px 36px rgba(0,0,0,.18);z-index:1000;display:none;flex-direction:column;overflow:hidden}
+.copilot-panel.open{display:flex}
+.copilot-header{padding:12px 16px;background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;display:flex;justify-content:space-between;align-items:center}
+.copilot-header h3{font-size:14px;display:flex;align-items:center;gap:6px}
+.copilot-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.copilot-msg{max-width:88%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+.copilot-msg.bot{background:#f0f0f0;align-self:flex-start;border-bottom-left-radius:3px}
+.copilot-msg.user{background:var(--blue);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.copilot-msg .action-btns{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.copilot-msg .action-btn{padding:4px 10px;border:1px solid var(--border);border-radius:14px;font-size:11px;cursor:pointer;background:#fff;transition:all .15s}
+.copilot-input{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:6px}
+.copilot-input input{flex:1;border:1.5px solid var(--border);border-radius:18px;padding:8px 14px;font-size:13px}
+.copilot-input input:focus{outline:none;border-color:var(--blue)}
+.copilot-input button{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center}
+.typing-indicator{display:flex;gap:3px;padding:6px 12px;align-self:flex-start}
+.typing-indicator span{width:6px;height:6px;background:#ccc;border-radius:50%;animation:bounce .6s infinite alternate}
+.typing-indicator span:nth-child(2){animation-delay:.15s}
+.typing-indicator span:nth-child(3){animation-delay:.3s}
+
+/* Confetti */
+.confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5000}
+
+/* Toast */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(60px);background:#333;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:3000;opacity:0;transition:all .3s;display:flex;align-items:center;gap:6px}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--green)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+
+/* Animations */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fillBar{from{width:0}to{width:100%}}
+@keyframes bounce{to{transform:translateY(-5px);background:var(--blue)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,120,212,.4)}50%{box-shadow:0 0 0 10px rgba(0,120,212,0)}}
+.animate-in{animation:fadeInUp .3s ease}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- ═════ TITLE SCREEN ═════ -->
+<div id="title-screen">
+  <div class="title-content">
+    <div class="ms-logo">◆</div>
+    <h1>Career Navigator</h1>
+    <div class="subtitle">Internal Career Platform — Redesigned</div>
+    <div class="tagline">A vision for the future of internal mobility at Microsoft</div>
+    <button class="start-btn" onclick="startDemo()">▶ &nbsp;Start Demo</button>
+  </div>
+</div>
+
+<!-- ═════ DEMO OVERLAYS ═════ -->
+<div id="narration-bar"><div class="scene-label" id="scene-label"></div><div class="narration-text" id="narration-text"></div></div>
+<div id="timeline"></div>
+<div id="controls"><button onclick="prevScene()" title="Previous">◀</button><button id="pause-btn" onclick="togglePause()" title="Pause">⏸</button><button onclick="nextScene()" title="Next">▶</button></div>
+<div id="chapter-label"></div>
+<div class="spotlight" id="spotlight"></div>
+<div class="scene-trans" id="scene-trans"></div>
+
+<!-- ═════ SVG CURSOR ═════ -->
+<svg id="fake-cursor" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 1L18 12L10 14L7 23L2 1Z" fill="#0078D4" stroke="#fff" stroke-width="1.5"/></svg>
+
+<div id="demo-wrapper">
+<div id="app-frame">
+
+<!-- ═════ TOPNAV ═════ -->
+<nav class="topnav" id="topnav">
+  <div class="logo">◆ <span>Career Navigator</span></div>
+  <div class="nav-tabs" id="nav-tabs">
+    <button class="nav-tab active" data-page="home">🏠 Home</button>
+    <button class="nav-tab" data-page="explore">🔍 Explore</button>
+    <button class="nav-tab" data-page="career">📊 My Career</button>
+    <button class="nav-tab" data-page="connect">🤝 Connect</button>
+    <button class="nav-tab" data-page="apps">💼 Applications <span class="badge">3</span></button>
+  </div>
+  <div class="nav-right"><button class="notif-btn">🔔<span class="dot"></span></button><div class="avatar">SN</div></div>
+</nav>
+
+<!-- ═══════════ HOME PAGE ═══════════ -->
+<div class="main-area" id="main-area">
+<div class="page active" id="page-home">
+  <div class="greeting">Good morning, <span>Shriram</span> 👋</div>
+  <p class="text-muted mb-12" style="font-size:13px">Here's your career pulse for February 18, 2026</p>
+  <div class="card-grid" style="grid-template-columns:260px 1fr;gap:16px;margin-bottom:16px">
+    <div class="card text-center" id="health-card" style="text-align:center">
+      <h3 class="font-bold mb-8" style="font-size:14px">Career Health Score</h3>
+      <div class="health-ring"><svg width="100" height="100"><circle cx="50" cy="50" r="42" fill="none" stroke="#eee" stroke-width="8"/><circle cx="50" cy="50" r="42" fill="none" stroke="url(#gr)" stroke-width="8" stroke-dasharray="263.9" stroke-dashoffset="69" stroke-linecap="round"/><defs><linearGradient id="gr"><stop offset="0%" stop-color="#0078D4"/><stop offset="100%" stop-color="#6B69D6"/></linearGradient></defs></svg><div class="score">74<small>/ 100</small></div></div>
+      <div class="health-bar"><span style="min-width:50px;font-size:11px">Profile</span><div class="bar"><div class="bar-fill" style="width:80%;background:var(--green)"></div></div><span class="text-xs">80%</span></div>
+      <div class="health-bar"><span style="min-width:50px;font-size:11px">Skills</span><div class="bar"><div class="bar-fill" style="width:70%;background:var(--blue)"></div></div><span class="text-xs">70%</span></div>
+      <div class="health-bar"><span style="min-width:50px;font-size:11px">Network</span><div class="bar"><div class="bar-fill" style="width:55%;background:var(--amber)"></div></div><span class="text-xs">55%</span></div>
+      <div class="health-bar"><span style="min-width:50px;font-size:11px">Activity</span><div class="bar"><div class="bar-fill" style="width:85%;background:var(--purple)"></div></div><span class="text-xs">85%</span></div>
+    </div>
+    <div class="flex-col gap-12">
+      <div class="card" id="interview-alert" style="border-left:4px solid var(--purple)">
+        <div class="flex items-center gap-6 mb-6"><span style="font-size:18px">📅</span><strong style="font-size:13px">Upcoming Interview — Feb 20</strong></div>
+        <div class="text-muted text-sm mb-8">PM Lead, Microsoft Teams — Final Round (3 loops) · 10:00 AM – 1:00 PM</div>
+        <div class="flex gap-6"><button class="btn btn-p btn-sm">🎯 Open Interview Prep</button><button class="btn btn-s btn-sm">📝 Practice with AI</button></div>
+      </div>
+      <div class="card-grid cg3">
+        <div class="rec-card" id="rec-matches"><div class="flex items-center gap-4 mb-4"><span style="font-size:16px">🆕</span><strong style="font-size:13px">8 New Matches</strong></div><div class="text-xs text-muted">For "Senior/Principal PM in AI"</div></div>
+        <div class="rec-card"><div class="flex items-center gap-4 mb-4"><span style="font-size:16px">🤝</span><strong style="font-size:13px">2 Mentor Slots</strong></div><div class="text-xs text-muted">Technical Leadership & AI Strategy</div></div>
+        <div class="rec-card"><div class="flex items-center gap-4 mb-4"><span style="font-size:16px">📚</span><strong style="font-size:13px">Course 70% Done</strong></div><div class="text-xs text-muted">"System Design at Scale"</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-between items-center mb-8"><div><div class="section-title" style="font-size:15px">🎯 AI-Recommended Roles</div><div class="text-xs text-muted">Based on your skills, interests, and career activity</div></div><button class="btn-ghost text-xs">View all 47 →</button></div>
+  <div class="card-grid cg3 mb-16" id="home-jobs"></div>
+  <div class="card-grid cg2">
+    <div class="card" id="trending-card">
+      <h3 class="font-bold mb-8" style="font-size:14px">📊 Trending at Microsoft</h3>
+      <div class="trending-item"><span class="rank">1</span>AI/ML Engineering<span class="pct">↑ 67%</span></div>
+      <div class="trending-item"><span class="rank">2</span>Security Engineering<span class="pct">↑ 45%</span></div>
+      <div class="trending-item"><span class="rank">3</span>Cloud Solutions Arch<span class="pct">↑ 38%</span></div>
+      <div class="trending-item"><span class="rank">4</span>Product Management<span class="pct">↑ 32%</span></div>
+      <div class="trending-item"><span class="rank">5</span>Data Engineering<span class="pct">↑ 28%</span></div>
+    </div>
+    <div class="card" id="app-status-card">
+      <h3 class="font-bold mb-8" style="font-size:14px">💼 Application Status</h3>
+      <div class="flex items-center gap-6 mb-8" style="padding:8px 0;border-bottom:1px solid #f0f0f0"><span class="status-dot interview"></span><div class="flex-col" style="flex:1"><strong class="text-xs">PM Lead, Teams</strong><div style="font-size:10px" class="text-muted">Final Round — Feb 20</div></div><span class="chip chip-p">Interview</span></div>
+      <div class="flex items-center gap-6 mb-8" style="padding:8px 0;border-bottom:1px solid #f0f0f0"><span class="status-dot screening"></span><div class="flex-col" style="flex:1"><strong class="text-xs">Senior PM, M365</strong><div style="font-size:10px" class="text-muted">Recruiter screening</div></div><span class="chip chip-a">Screening</span></div>
+      <div class="flex items-center gap-6" style="padding:8px 0"><span class="status-dot applied"></span><div class="flex-col" style="flex:1"><strong class="text-xs">Principal PM, Azure AI</strong><div style="font-size:10px" class="text-muted">Applied Feb 8</div></div><span class="chip chip-b">Applied</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ EXPLORE PAGE ═══════════ -->
+<div class="page" id="page-explore">
+  <div class="search-bar"><input type="text" id="search-input" placeholder='Try: "PM roles in AI, remote-friendly, leadership path"' value=""><button class="btn btn-p" id="search-btn">🔍 Search</button><button class="btn btn-s" id="save-search-btn">💾 Save</button></div>
+  <div class="active-filters" id="active-filters"></div>
+  <div class="search-layout">
+    <div class="card filter-panel" id="filter-panel">
+      <div class="filter-section"><h4>📍 Location</h4>
+        <label class="filter-option"><input type="checkbox" checked> Remote-eligible <span class="count">142</span></label>
+        <label class="filter-option"><input type="checkbox" checked> Redmond, WA <span class="count">89</span></label>
+        <label class="filter-option"><input type="checkbox"> Hyderabad <span class="count">34</span></label>
+      </div>
+      <div class="filter-section"><h4>🏢 Organization</h4>
+        <label class="filter-option"><input type="checkbox" checked> Cloud + AI <span class="count">67</span></label>
+        <label class="filter-option"><input type="checkbox"> Experiences + Devices <span class="count">42</span></label>
+        <label class="filter-option"><input type="checkbox"> Security <span class="count">28</span></label>
+        <label class="filter-option"><input type="checkbox"> DevDiv <span class="count">19</span></label>
+      </div>
+      <div class="filter-section"><h4>📊 Level</h4>
+        <label class="filter-option"><input type="checkbox"> IC3 (59-61) <span class="count">22</span></label>
+        <label class="filter-option"><input type="checkbox" checked> IC4 (62-64) <span class="count">45</span></label>
+        <label class="filter-option"><input type="checkbox" checked> IC5 (65-67) <span class="count">31</span></label>
+      </div>
+      <div class="filter-section"><h4>🚫 Exclude</h4>
+        <label class="filter-option"><input type="checkbox" checked> Already applied</label>
+        <label class="filter-option"><input type="checkbox" checked> Previously dismissed</label>
+      </div>
+    </div>
+    <div>
+      <div class="results-header"><div class="text-sm"><strong>47 roles found</strong> · Updated just now</div><select class="sort-select"><option>Sort: Best Match</option></select></div>
+      <div id="job-results"></div>
+      <div class="mt-12"><div class="flex justify-between items-center mb-8"><div class="section-title" style="font-size:14px">📁 My Collections <span class="text-muted text-xs font-bold" style="font-weight:400">— Unlimited saves</span></div></div>
+        <div class="card-grid cg4" id="collections-grid">
+          <div class="collection-card filled"><div class="collection-count">12</div><div class="font-bold text-xs">Dream PM Roles</div><div style="font-size:10px" class="text-muted">Updated 2 days ago</div></div>
+          <div class="collection-card filled"><div class="collection-count">7</div><div class="font-bold text-xs">Manager Track</div><div style="font-size:10px" class="text-muted">Updated 5 days ago</div></div>
+          <div class="collection-card filled"><div class="collection-count">4</div><div class="font-bold text-xs">Stretch Roles</div><div style="font-size:10px" class="text-muted">Updated 1 week ago</div></div>
+          <div class="collection-card"><span style="font-size:22px;color:var(--t3)">+</span><span class="text-xs text-muted">New Collection</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ CAREER PAGE ═══════════ -->
+<div class="page" id="page-career">
+  <div class="section-title mb-6" style="font-size:15px">📊 My Career</div>
+  <div class="career-tabs" id="career-tabs">
+    <button class="career-tab active" data-tab="skills-tab">Skills Intelligence</button>
+    <button class="career-tab" data-tab="paths-tab">Career Paths</button>
+    <button class="career-tab" data-tab="journey-tab">My Journey</button>
+    <button class="career-tab" data-tab="gigs-tab">Internal Gigs</button>
+  </div>
+  <div id="skills-tab" class="career-pane">
+    <div class="card-grid cg2">
+      <div class="card" id="skills-dna-card">
+        <h3 class="font-bold mb-12" style="font-size:14px">Your Skills DNA</h3>
+        <div class="skill-bar"><div class="label"><span>Azure Cloud Services</span><span class="chip chip-g">Expert</span></div><div class="bar"><div class="fill" style="width:92%;background:var(--green)"></div></div></div>
+        <div class="skill-bar"><div class="label"><span>Product Management</span><span class="chip chip-g">Expert</span></div><div class="bar"><div class="fill" style="width:88%;background:var(--green)"></div></div></div>
+        <div class="skill-bar"><div class="label"><span>Cross-team Collaboration</span><span class="chip chip-g">Advanced</span></div><div class="bar"><div class="fill" style="width:82%;background:var(--blue)"></div></div></div>
+        <div class="skill-bar"><div class="label"><span>AI/ML Product Strategy</span><span class="chip chip-a">Growing</span></div><div class="bar"><div class="fill" style="width:60%;background:var(--amber)"></div></div></div>
+        <div class="skill-bar"><div class="label"><span>LLM / Foundation Models</span><span class="chip chip-r">Emerging</span></div><div class="bar"><div class="fill" style="width:30%;background:var(--red)"></div></div></div>
+        <div class="skill-bar"><div class="label"><span>RAG Architecture</span><span class="chip chip-r">Emerging</span></div><div class="bar"><div class="fill" style="width:20%;background:var(--red)"></div></div></div>
+      </div>
+      <div class="card" id="market-demand-card">
+        <h3 class="font-bold mb-12" style="font-size:14px">🔥 Market Demand vs. You</h3>
+        <div style="background:#dff6dd;border-radius:8px;padding:10px;margin-bottom:10px"><div class="font-bold text-xs" style="color:var(--green)">Hot skills you HAVE</div><div class="text-xs mt-4">• Azure (↑ 34% YoY) — <strong>Top 15%</strong></div><div class="text-xs mt-4">• AI PM (↑ 67% YoY)</div></div>
+        <div style="background:#fff4ce;border-radius:8px;padding:10px;margin-bottom:10px"><div class="font-bold text-xs" style="color:#8a6d0b">Hot skills you NEED</div><div class="text-xs mt-4">• LLM — 78% of L65+ PM roles require this</div><div class="text-xs mt-4">• RAG — Emerging in 45% of AI roles</div></div>
+        <div style="background:#f0f0f0;border-radius:8px;padding:10px;text-align:center"><div class="text-xs text-muted">Skills Score for Principal PM</div><div style="font-size:30px;font-weight:800;color:var(--blue)">74 <span style="font-size:14px;color:var(--t3)">/100</span></div><button class="btn btn-p btn-sm mt-8">Build Learning Plan →</button></div>
+      </div>
+    </div>
+  </div>
+  <div id="paths-tab" class="career-pane hidden">
+    <div class="card mb-12">
+      <h3 class="font-bold mb-6" style="font-size:14px">🗺️ Career Path Simulator</h3>
+      <p class="text-muted text-xs mb-12">Explore "What If" scenarios from your current position</p>
+      <div class="card-grid cg4">
+        <div class="card" id="ic-path" style="border:2px solid var(--blue);cursor:pointer"><div style="font-size:24px;margin-bottom:6px">📊</div><div class="font-bold text-xs">Stay IC Track</div><div style="font-size:10px" class="text-muted mt-4">Next: Principal PM (L65)</div><div style="font-size:10px" class="text-muted">Timeline: 2-3 years</div><div style="font-size:10px;color:var(--green);margin-top:3px">23 open roles</div></div>
+        <div class="card" style="cursor:pointer"><div style="font-size:24px;margin-bottom:6px">👔</div><div class="font-bold text-xs">Management</div><div style="font-size:10px" class="text-muted mt-4">Next: PM Manager (M3)</div><div style="font-size:10px" class="text-muted">Timeline: 1-2 years</div><div style="font-size:10px;color:var(--green);margin-top:3px">9 open roles</div></div>
+        <div class="card" style="cursor:pointer"><div style="font-size:24px;margin-bottom:6px">🔄</div><div class="font-bold text-xs">Switch to Eng</div><div style="font-size:10px" class="text-muted mt-4">Next: Senior SDE (L63)</div><div style="font-size:10px" class="text-muted">Lateral move</div><div style="font-size:10px;color:var(--green);margin-top:3px">15 open roles</div></div>
+        <div class="card" style="cursor:pointer"><div style="font-size:24px;margin-bottom:6px">🌍</div><div class="font-bold text-xs">New Org</div><div style="font-size:10px" class="text-muted mt-4">Security, M365, Teams</div><div style="font-size:10px;color:var(--green);margin-top:3px">14 open roles</div></div>
+      </div>
+    </div>
+    <div class="card" id="roadmap-card">
+      <h3 class="font-bold mb-6" style="font-size:14px">🎯 Roadmap to: Principal PM (L65)</h3>
+      <p class="text-xs text-muted mb-12">Estimated: 18-24 months</p>
+      <div style="border-left:3px solid var(--blue);padding-left:16px">
+        <div class="mb-12"><div class="chip chip-b mb-6">Phase 1 · Months 1-6</div><div class="text-xs mb-4">📚 "System Design at Scale" <span class="chip chip-g">30% done</span></div><div class="text-xs mb-4">🔨 Cross-org gig in Azure Infra</div><div class="text-xs">🤝 Monthly 1:1 with Principal mentor</div></div>
+        <div class="mb-12"><div class="chip chip-a mb-6">Phase 2 · Months 7-14</div><div class="text-xs mb-4">📚 "Technical Leadership"</div><div class="text-xs">🔨 Lead cross-team design review</div></div>
+        <div><div class="chip chip-p mb-6">Phase 3 · Months 15-24</div><div class="text-xs">🎯 Apply to Principal PM roles</div></div>
+      </div>
+    </div>
+  </div>
+  <div id="journey-tab" class="career-pane hidden">
+    <div class="card">
+      <h3 class="font-bold mb-12" style="font-size:14px">🏆 Career Journey</h3>
+      <div class="path-node"><div class="path-dot past">📌</div><div><strong class="text-sm">PM, Azure Functions · L61</strong><div style="font-size:11px" class="text-muted">Jun 2021 — Mar 2023</div></div></div>
+      <div class="path-node"><div class="path-dot past">📌</div><div><strong class="text-sm">Senior PM, Azure Functions · L63</strong><div style="font-size:11px" class="text-muted">Mar 2023 — Sep 2024</div></div></div>
+      <div class="path-node"><div class="path-dot current">⭐</div><div><strong class="text-sm">Senior PM, Azure AI · L63</strong><div style="font-size:11px" class="text-muted">Sep 2024 — Present</div></div></div>
+      <div class="path-node"><div class="path-dot future">?</div><div><strong class="text-sm" style="color:var(--t3)">What's Next?</strong></div></div>
+    </div>
+  </div>
+  <div id="gigs-tab" class="career-pane hidden">
+    <div class="section-title mb-8" style="font-size:14px">🔨 Internal Gigs</div>
+    <div class="card-grid cg2" id="gigs-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════ CONNECT PAGE ═══════════ -->
+<div class="page" id="page-connect">
+  <div class="section-title mb-6" style="font-size:15px">🤝 Connect</div>
+  <div class="career-tabs" id="connect-tabs">
+    <button class="career-tab active" data-tab="mentors-tab">Find a Mentor</button>
+    <button class="career-tab" data-tab="infointerviews-tab">Informational Interviews</button>
+    <button class="career-tab" data-tab="community-tab">Communities</button>
+  </div>
+  <div id="mentors-tab" class="connect-pane">
+    <div class="card mb-12" id="mentor-privacy-card" style="background:linear-gradient(135deg,#f8f6ff,#e6f2ff);border:none;padding:12px 14px">
+      <div class="flex items-center gap-6 mb-4"><span style="font-size:16px">🛡️</span><strong class="text-sm">How we match</strong></div>
+      <p style="font-size:12px">Mentors are <strong>2+ levels above you or from a different org</strong>. We never suggest peers or managers. <strong>100% private</strong> until you send a request.</p>
+    </div>
+    <div id="mentors-list"></div>
+  </div>
+  <div id="infointerviews-tab" class="connect-pane hidden">
+    <div class="card mb-12" id="info-privacy-card" style="background:linear-gradient(135deg,#f0faf8,#e6f2ff);border:none;padding:12px 14px">
+      <div class="flex items-center gap-6"><span style="font-size:16px">☕</span><strong class="text-sm">Learn about any team — before you apply</strong></div>
+      <p style="font-size:12px;margin-top:4px">Your identity stays <strong>private</strong> — they only see "A Microsoft employee is curious about the team."</p>
+    </div>
+    <div id="info-list"></div>
+  </div>
+  <div id="community-tab" class="connect-pane hidden">
+    <div class="card-grid cg3">
+      <div class="card"><div style="font-size:22px;margin-bottom:6px">🧠</div><div class="font-bold text-xs">AI & ML Guild</div><div style="font-size:10px" class="text-muted mt-4">5,600 members</div></div>
+      <div class="card"><div style="font-size:22px;margin-bottom:6px">👩‍💻</div><div class="font-bold text-xs">Women in PM</div><div style="font-size:10px" class="text-muted mt-4">1,800 members</div></div>
+      <div class="card"><div style="font-size:22px;margin-bottom:6px">🚀</div><div class="font-bold text-xs">Career Movers</div><div style="font-size:10px" class="text-muted mt-4">2,900 members</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ APPLICATIONS PAGE ═══════════ -->
+<div class="page" id="page-apps">
+  <div class="flex justify-between items-center mb-12"><div><div class="section-title" style="font-size:15px">💼 Application Command Center</div><div class="text-xs text-muted">Track every application in one place</div></div><div class="flex gap-4"><span class="chip chip-b">Active: 4</span><span class="chip chip-a">Review: 2</span><span class="chip chip-p">Interview: 1</span></div></div>
+  <div class="interview-prep-card" id="prep-alert">
+    <div class="flex items-center justify-between mb-8"><div class="flex items-center gap-6"><span style="font-size:18px">🎯</span><strong class="text-sm">Interview Prep: PM Lead — Teams</strong><span class="chip chip-p">Feb 20 · 2 days</span></div><button class="btn btn-p btn-sm">Full Prep Kit →</button></div>
+    <div class="card-grid cg4">
+      <div class="card" style="padding:10px"><div style="font-size:10px;font-weight:700" class="text-muted">ROLE BRIEF</div><div class="text-xs mt-4">AI summary of the role & team</div></div>
+      <div class="card" style="padding:10px"><div style="font-size:10px;font-weight:700" class="text-muted">YOUR STRENGTHS</div><div class="text-xs mt-4">3 personalized talking points</div></div>
+      <div class="card" style="padding:10px"><div style="font-size:10px;font-weight:700" class="text-muted">PRACTICE Q's</div><div class="text-xs mt-4">5 likely questions with STAR prompts</div></div>
+      <div class="card" style="padding:10px"><div style="font-size:10px;font-weight:700" class="text-muted">AI PRACTICE</div><div class="text-xs mt-4">Mock interview with Copilot</div></div>
+    </div>
+  </div>
+  <div class="pipeline" id="pipeline">
+    <div class="pipeline-col"><h4>📤 Applied <span class="cnt">2</span></h4><div class="pipeline-card" id="pc-azure"><div class="pt">Principal PM — Azure AI</div><div class="pm">Cloud+AI · Redmond · IC5</div><div class="flex items-center justify-between"><div class="pd">Applied Feb 8</div><span class="match-badge" style="font-size:10px">95%</span></div></div><div class="pipeline-card"><div class="pt">Lead PM — DevDiv</div><div class="pm">DevDiv · Redmond · IC5</div><div class="pd">Applied Feb 10</div></div></div>
+    <div class="pipeline-col"><h4>🔍 Screening <span class="cnt">2</span></h4><div class="pipeline-card" id="pc-m365"><div class="pt">Senior PM — M365</div><div class="pm">E+D · Remote · IC4</div><div class="pd">Recruiter screen in progress</div><div style="font-size:10px;color:var(--amber);margin-top:4px">⏳ ~5 days remaining</div></div><div class="pipeline-card"><div class="pt">PM Manager — Azure AI</div><div class="pm">Cloud+AI · Redmond · M3</div><div class="pd">Phone screen Feb 22</div></div></div>
+    <div class="pipeline-col"><h4>🎤 Interview <span class="cnt">1</span></h4><div class="pipeline-card" id="pc-teams" style="border-color:var(--purple)"><div class="pt">PM Lead — Teams</div><div class="pm">E+D · Redmond · IC5</div><div class="pd" style="color:var(--purple);font-weight:600">Final Round · Feb 20</div><div style="font-size:10px;margin-top:4px">3 loops · 10am-1pm</div></div></div>
+    <div class="pipeline-col"><h4>✅ Decision <span class="cnt">0</span></h4><div style="text-align:center;padding:20px 8px;color:var(--t3)"><div style="font-size:26px;margin-bottom:6px">🎯</div><div class="text-xs">No pending decisions</div></div></div>
+  </div>
+</div>
+</div><!-- main-area -->
+
+<!-- ═══════════ DETAIL MODAL ═══════════ -->
+<div class="modal-overlay" id="job-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('job-modal')">✕</button>
+    <div class="modal-header">
+      <div class="flex items-center gap-6 mb-4"><span class="match-badge">💎 95% Match</span></div>
+      <div class="title">Principal PM — Copilot Platform</div>
+      <div class="meta"><span>Cloud + AI</span><span>·</span><span>Redmond, WA</span><span>·</span><span>Level 65</span><span>·</span><span>Full-time</span><span>·</span><span>Posted 3 days ago</span></div>
+      <div class="cta-row"><button class="btn btn-p" id="apply-btn">Apply Now</button><button class="btn btn-o">⭐ Save to Collection</button><button class="btn btn-s">☕ Info Interview</button></div>
+    </div>
+    <div class="detail-tabs" id="modal-tabs">
+      <button class="detail-tab active" data-pane="ov-pane">Overview</button>
+      <button class="detail-tab" data-pane="team-pane">Team & Culture</button>
+      <button class="detail-tab" data-pane="skills-pane">Skills Match</button>
+      <button class="detail-tab" data-pane="growth-pane">Growth Path</button>
+    </div>
+    <div class="detail-content">
+      <div class="detail-pane active" id="ov-pane">
+        <div style="background:#f8f6ff;border-radius:8px;padding:12px;margin-bottom:12px;border-left:3px solid var(--purple)"><div style="font-size:10px;font-weight:700" class="text-muted mb-4">AI SUMMARY</div><div class="text-xs">This role leads Copilot's core extensibility platform. You'd own the framework for 3rd-party plugins. Highest-visibility team, ships quarterly, data-driven culture.</div></div>
+        <h4 class="font-bold mb-6" style="font-size:13px">First 90 Days</h4>
+        <div class="text-xs mb-4">• Define Q3 extensibility roadmap with 2 senior engineers</div>
+        <div class="text-xs mb-4">• Conduct 15+ partner interviews for plugin API design</div>
+        <div class="text-xs mb-4">• Ship v2 developer documentation portal</div>
+        <div class="text-xs">• Present platform strategy to CVP leadership</div>
+      </div>
+      <div class="detail-pane" id="team-pane">
+        <div class="team-stat"><span>Team Size</span><strong>18 (6 PM, 10 Eng, 2 Design)</strong></div>
+        <div class="team-stat"><span>Work Style</span><strong>Hybrid, no-meeting Fridays</strong></div>
+        <div class="team-stat"><span>Ship Cadence</span><strong>Quarterly</strong></div>
+        <h4 class="font-bold mt-12 mb-6" style="font-size:13px">Team Quotes (Anonymous)</h4>
+        <div style="background:#f8f8f8;border-radius:6px;padding:10px;font-style:italic" class="text-xs">"Best PM team I've worked on — real ownership, real impact."</div>
+      </div>
+      <div class="detail-pane" id="skills-pane">
+        <div class="text-xs text-muted mb-8">How your skills match:</div>
+        <div class="skill-match-row"><span>✅</span><div style="flex:1"><strong>Product Strategy</strong><div style="font-size:10px" class="text-muted">4+ years PM exp</div></div><span class="chip chip-g">Strong</span></div>
+        <div class="skill-match-row"><span>✅</span><div style="flex:1"><strong>Azure Services</strong><div style="font-size:10px" class="text-muted">Expert-level</div></div><span class="chip chip-g">Strong</span></div>
+        <div class="skill-match-row"><span>✅</span><div style="flex:1"><strong>Cross-team Collab</strong><div style="font-size:10px" class="text-muted">Proven track record</div></div><span class="chip chip-g">Strong</span></div>
+        <div class="skill-match-row"><span>⚠️</span><div style="flex:1"><strong>LLM Architecture</strong><div style="font-size:10px" class="text-muted">Growing — courses available</div></div><span class="chip chip-a">Gap</span></div>
+        <div style="background:#f0f6ff;border-radius:8px;padding:10px;margin-top:10px"><div class="text-xs"><strong>💡</strong> The gig "Copilot Plugin API Review Board" would close both gaps.</div></div>
+      </div>
+      <div class="detail-pane" id="growth-pane">
+        <div class="text-xs text-muted mb-12">Where this role leads:</div>
+        <div class="growth-path-item"><div class="dot" style="background:var(--blue)"></div><div><strong class="text-xs">Principal PM (THIS ROLE) · L65</strong></div></div>
+        <div class="growth-path-item"><div class="dot"></div><div><strong class="text-xs">Group PM · L67</strong><div style="font-size:10px" class="text-muted">~2.5 years</div></div></div>
+        <div class="growth-path-item"><div class="dot"></div><div><strong class="text-xs">Director of PM · M5</strong><div style="font-size:10px" class="text-muted">~4 years</div></div></div>
+        <div class="growth-path-item"><div class="dot"></div><div><strong class="text-xs">Partner PM · L68+</strong><div style="font-size:10px" class="text-muted">~5+ years</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SCHEDULE MODAL ═══════════ -->
+<div class="modal-overlay" id="schedule-modal">
+  <div class="schedule-modal">
+    <button class="modal-close" onclick="closeModal('schedule-modal')">✕</button>
+    <h3 class="font-bold mb-4" style="font-size:15px">☕ Schedule: Copilot Platform</h3>
+    <p class="text-xs text-muted mb-12">Chat with Alex Kim (Senior PM)</p>
+    <div class="mb-12"><div class="text-xs font-bold mb-6">Available Slots — Week of Feb 23</div>
+      <div class="card-grid cg3 gap-6"><div class="time-slot" id="slot1">Tue Feb 24<br><strong>2:00 PM</strong></div><div class="time-slot" id="slot2">Wed Feb 25<br><strong>11:00 AM</strong></div><div class="time-slot" id="slot3">Thu Feb 26<br><strong>3:30 PM</strong></div></div>
+    </div>
+    <div style="background:#f8f6ff;border-radius:6px;padding:8px;margin-bottom:12px"><div style="font-size:10px" class="text-muted">🔒 Your identity stays private until you choose to reveal it.</div></div>
+    <button class="btn btn-p w-full" id="confirm-schedule-btn">📅 Schedule via Teams</button>
+  </div>
+</div>
+
+<!-- ═══════════ COPILOT ═══════════ -->
+<button class="copilot-fab" id="copilot-fab">🤖</button>
+<div class="copilot-panel" id="copilot-panel">
+  <div class="copilot-header"><h3>🤖 Career Copilot</h3><button style="color:#fff;font-size:16px" id="close-copilot">✕</button></div>
+  <div class="copilot-messages" id="copilot-messages">
+    <div class="copilot-msg bot">Hi Shriram! 👋 I'm your Career Copilot. How can I help?
+      <div class="action-btns"><button class="action-btn">🔍 Find matching roles</button><button class="action-btn">📊 Skills for L65</button><button class="action-btn">🎯 Interview prep</button></div>
+    </div>
+  </div>
+  <div class="copilot-input"><input type="text" id="copilot-input" placeholder="Ask about your career..."><button id="copilot-send">➤</button></div>
+</div>
+
+<div class="toast" id="toast"></div>
+</div><!-- app-frame -->
+</div><!-- demo-wrapper -->
+
+<script>
+// ═══════════════════════════════════════════════
+// SAMPLE DATA
+// ═══════════════════════════════════════════════
+const JOBS=[
+  {id:1,title:"Principal PM — Copilot Platform",org:"Cloud + AI",loc:"Redmond, WA",level:"L65 (IC5)",match:95,posted:"3 days ago",desc:"Lead Copilot's core extensibility platform. Own the 3rd-party plugin framework.",skills:["Product Strategy","Azure","AI/ML","Platforms"]},
+  {id:2,title:"Senior PM — Azure AI Services",org:"Cloud + AI",loc:"Remote",level:"L64 (IC4)",match:89,posted:"1 day ago",desc:"Shape enterprise AI. Drive Azure AI Services product strategy and adoption.",skills:["Azure","AI/ML","Enterprise"]},
+  {id:3,title:"Lead PM — Developer Experience",org:"DevDiv",loc:"Redmond",level:"L65 (IC5)",match:84,posted:"5 days ago",desc:"Build tools developers love. Own VS Code extension developer experience.",skills:["Dev Tools","UX","Platform"]},
+  {id:4,title:"PM Manager — AI Platform",org:"Cloud + AI",loc:"Redmond",level:"M3",match:82,posted:"2 days ago",desc:"Lead 5 PMs building next-gen Azure AI platform services.",skills:["People Mgmt","AI/ML","Strategy"]},
+  {id:5,title:"Senior PM — Security Copilot",org:"Security",loc:"Remote",level:"L63 (IC4)",match:78,posted:"1 week ago",desc:"Define Security Copilot's investigation capabilities for enterprise SOC.",skills:["Security","AI/ML","Copilot"]},
+];
+const MENTORS=[
+  {name:"Sarah Chen",role:"Partner PM, Azure AI Platform",level:"L68",org:"Cloud + AI",match:97,avatar:"SC",color:"#0078D4",why:"Sarah went Senior PM → Principal → Partner PM in 6 years. She's mentored 12 people through IC growth. Her AI expertise aligns perfectly with your interests."},
+  {name:"James Rivera",role:"Engineering Director",level:"M5",org:"Security",match:91,avatar:"JR",color:"#D83B01",why:"James made the IC→Manager transition 5 years ago. Different org = broader network + fresh perspective on your career trajectory."},
+  {name:"Priya Sharma",role:"Distinguished Engineer",level:"L68",org:"DevDiv",match:88,avatar:"PS",color:"#6B69D6",why:"Priya stayed deep IC to reach Distinguished Engineer. She's the ideal mentor if you're considering the technical leadership path."},
+];
+const INFOS=[
+  {team:"Copilot Platform",org:"Cloud + AI",person:"Alex Kim",role:"Senior PM",slots:"Tue/Thu"},
+  {team:"Teams Meetings",org:"E+D",person:"Priya Reddy",role:"PM Lead",slots:"Mon/Wed"},
+  {team:"Azure AI Services",org:"Cloud + AI",person:"Lisa Park",role:"Principal PM",slots:"Tue"},
+];
+const GIGS=[
+  {title:"Copilot Plugin API Review Board",org:"Cloud + AI",time:"10%",dur:"3 mo",desc:"Evaluate 3rd-party Copilot plugin proposals. Build LLM architecture + platform strategy skills.",skills:["LLM","Platform Strategy"]},
+  {title:"Accessibility Audit — AI Products",org:"Cross-company",time:"10%",dur:"4 wk",desc:"Audit AI features for accessibility. Great cross-org visibility.",skills:["Accessibility","AI/ML"]},
+];
+
+// ═══════════════════════════════════════════════
+// RENDER functions
+// ═══════════════════════════════════════════════
+function renderJobCard(j){return `<div class="job-card" id="jc-${j.id}"><div class="flex justify-between items-center mb-4"><div><div class="jt">${j.title}</div><div class="jm">${j.org} · ${j.loc} · ${j.level} · ${j.posted}</div></div><span class="match-badge">💎 ${j.match}%</span></div><div class="jd">${j.desc}</div><div class="skills-row">${j.skills.map(s=>`<span class="chip">${s}</span>`).join('')}</div><div class="actions"><button class="btn btn-p btn-sm">Apply</button><button class="btn btn-o btn-sm">⭐ Save</button><button class="btn btn-ghost btn-sm">☕ Info Interview</button></div></div>`}
+function renderMentor(m){return `<div class="mentor-card" id="mc-${m.avatar}"><div class="flex gap-12 mb-8"><div class="mentor-avatar" style="background:${m.color}">${m.avatar}</div><div style="flex:1"><div class="flex items-center justify-between"><strong class="text-sm">${m.name}</strong><span class="match-badge" style="font-size:10px">🏅 ${m.match}%</span></div><div style="font-size:11px" class="text-muted">${m.role} · ${m.level}</div><div style="font-size:10px" class="text-muted">${m.org}</div></div></div><div class="why-match"><strong>Why:</strong> "${m.why}"</div><div class="flex items-center justify-between"><span class="text-xs text-muted">Slots open</span><button class="btn btn-p btn-sm">Request Mentorship</button></div></div>`}
+function renderInfo(ii){return `<div class="info-interview-card" id="ii-${ii.team.replace(/\s/g,'')}"><div style="flex:1"><div class="font-bold text-xs">${ii.team} <span class="chip chip-b" style="margin-left:4px">${ii.org}</span></div><div style="font-size:10px;margin-top:4px" class="text-muted">${ii.person} (${ii.role}) — ${ii.slots}</div></div><button class="btn btn-o btn-sm">☕ Schedule</button></div>`}
+function renderGig(g){return `<div class="card"><div class="flex gap-4 mb-6"><span class="chip chip-p">${g.time}</span><span class="chip">${g.dur}</span></div><div class="font-bold text-xs mb-4">${g.title}</div><div style="font-size:11px" class="text-muted mb-6">${g.desc}</div><div class="flex gap-4 mb-8">${g.skills.map(s=>`<span class="chip chip-g">${s}</span>`).join('')}</div><button class="btn btn-p btn-sm">Express Interest</button></div>`}
+
+document.getElementById('home-jobs').innerHTML=JOBS.slice(0,3).map(renderJobCard).join('');
+document.getElementById('job-results').innerHTML=JOBS.map(renderJobCard).join('');
+document.getElementById('mentors-list').innerHTML=MENTORS.map(renderMentor).join('');
+document.getElementById('info-list').innerHTML=INFOS.map(renderInfo).join('');
+document.getElementById('gigs-list').innerHTML=GIGS.map(renderGig).join('');
+
+// ═══════════════════════════════════════════════
+// PAGE NAV
+// ═══════════════════════════════════════════════
+function showPage(pg){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+pg).classList.add('active');
+  document.querySelector(`.nav-tab[data-page="${pg}"]`).classList.add('active');
+  document.getElementById('main-area').scrollTop=0;
+}
+function showCareerTab(tabId){
+  document.querySelectorAll('#page-career .career-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#page-career .career-pane').forEach(p=>p.classList.add('hidden'));
+  document.querySelector(`#career-tabs [data-tab="${tabId}"]`).classList.add('active');
+  document.getElementById(tabId).classList.remove('hidden');
+}
+function showConnectTab(tabId){
+  document.querySelectorAll('#page-connect .career-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#page-connect .connect-pane').forEach(p=>p.classList.add('hidden'));
+  document.querySelector(`#connect-tabs [data-tab="${tabId}"]`).classList.add('active');
+  document.getElementById(tabId).classList.remove('hidden');
+}
+function showModalTab(paneId){
+  document.querySelectorAll('#modal-tabs .detail-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.detail-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`#modal-tabs [data-pane="${paneId}"]`).classList.add('active');
+  document.getElementById(paneId).classList.add('active');
+}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(()=>t.classList.remove('show'),2500)}
+
+// ═══════════════════════════════════════════════
+// DEMO ENGINE
+// ═══════════════════════════════════════════════
+let scenes=[];
+let currentScene=-1;
+let paused=false;
+let sceneTimer=null;
+
+const SCENES=[
+  // 0: INTRO — Home Dashboard
+  {label:"Chapter 1",chapter:"Home Dashboard",dur:7000,
+   narration:"Welcome to <strong>Career Navigator</strong> — a complete reimagination of the internal career experience. The moment an employee lands here, they see their <strong>personalized career pulse</strong> — a health score, upcoming interviews, new job matches, and AI recommendations. <em>Everything in one glance.</em>",
+   action:()=>{showPage('home')}},
+
+  // 1: Health Score
+  {label:"Chapter 1",chapter:"Career Health Score",dur:6000,
+   narration:"The <strong>Career Health Score</strong> gives employees a clear, actionable metric across four dimensions — Profile completeness, Skills growth, Network strength, and Career activity. It turns career development from a vague aspiration into <strong>a measurable goal</strong>.",
+   action:()=>{spotlight('health-card')},after:()=>clearSpotlight()},
+
+  // 2: Interview Alert
+  {label:"Chapter 1",chapter:"Smart Alerts",dur:5500,
+   narration:"<strong>Proactive intelligence.</strong> The platform surfaces time-sensitive actions — here, an upcoming interview with a one-click path to the AI-powered prep kit. No hunting through emails or calendar. <em>The platform works for you.</em>",
+   action:()=>{spotlight('interview-alert')},after:()=>clearSpotlight()},
+
+  // 3: Navigate to Explore
+  {label:"Chapter 2",chapter:"Intelligent Job Discovery",dur:6500,
+   narration:"Now let's find a role. Unlike traditional job boards with keyword matching, Career Navigator uses <strong>natural language search</strong>. Watch as we type a real human query — the way an employee actually thinks about their next move.",
+   action:()=>{showPage('explore');setTimeout(()=>typeInto('search-input','PM roles in AI, remote-friendly, leadership path',50),400)}},
+
+  // 4: Filters
+  {label:"Chapter 2",chapter:"Persistent Filters & URL State",dur:7000,
+   narration:"Filters persist in the URL — employees can <strong>bookmark, share, and return to any search</strong> without losing state. Applied jobs are <em>excluded by default</em> — no more scrolling past roles you've already applied to. And notice: <strong>unlimited saves</strong> organized into collections, not a 3-job limit.",
+   action:()=>{
+     document.getElementById('active-filters').innerHTML='<span class="chip chip-b">PM AI · remote · leadership</span><span class="chip chip-b">Remote + Redmond</span><span class="chip chip-b">IC4–IC5</span><span class="chip chip-g">✓ Excluding applied</span>';
+     spotlight('filter-panel')},after:()=>clearSpotlight()},
+
+  // 5: Job detail modal
+  {label:"Chapter 2",chapter:"Job Detail — Deep Insights",dur:7000,
+   narration:"Every role shows an <strong>AI-generated match score</strong>. Click into any job and you get four tabs — not just a description, but <strong>Team & Culture insights</strong> (team size, work style, anonymous quotes from team members), <strong>Skills Match</strong> analysis showing your gaps, and a <strong>Growth Path</strong> showing where this role leads over years.",
+   action:()=>{
+     hlEl('jc-1');
+     setTimeout(()=>{unhlEl('jc-1');openModal('job-modal');showModalTab('ov-pane')},1200);
+   }},
+
+  // 6: Skills Match Tab
+  {label:"Chapter 2",chapter:"Skills Match Analysis",dur:6000,
+   narration:"The <strong>Skills Match</strong> tab shows exactly where an employee is strong and where they have gaps — with <em>actionable recommendations</em>. It doesn't just identify gaps; it links directly to internal gigs and courses that close them. This turns job browsing into career development.",
+   action:()=>{showModalTab('skills-pane')}},
+
+  // 7: Growth Path Tab
+  {label:"Chapter 2",chapter:"Growth Path Visualization",dur:5500,
+   narration:"The <strong>Growth Path</strong> answers the question every employee asks: \"Where does this role take me?\" It shows the typical progression over 5+ years, <em>based on anonymized data from hundreds of employees who held similar roles</em>. This transparency drives retention.",
+   action:()=>{showModalTab('growth-pane');setTimeout(()=>closeModal('job-modal'),4800)}},
+
+  // 8: Applications
+  {label:"Chapter 3",chapter:"Application Command Center",dur:7000,
+   narration:"The <strong>Application Command Center</strong> — a Kanban-style pipeline that tracks every application from submission to decision. No more wondering \"what happened to my application?\" The employee sees real-time status, estimated wait times, and — most importantly — an <strong>AI-powered Interview Prep Kit</strong> triggered automatically before each interview.",
+   action:()=>{showPage('apps');spotlight('pipeline')},after:()=>clearSpotlight()},
+
+  // 9: Interview Prep
+  {label:"Chapter 3",chapter:"AI Interview Prep Kit",dur:6500,
+   narration:"The interview prep kit is <em>personalized to the employee's experience</em>. It generates an AI role brief, maps the employee's specific strengths to the role's requirements, generates likely practice questions with coaching hints, and shows the actual interview loop schedule. This is the kind of experience that makes employees say <strong>\"Microsoft invested in my career.\"</strong>",
+   action:()=>{spotlight('prep-alert')},after:()=>clearSpotlight()},
+
+  // 10: Connect - Mentors
+  {label:"Chapter 4",chapter:"Mentoring — Reimagined",dur:7000,
+   narration:"Now the most important part: <strong>human connection</strong>. The mentoring system uses hierarchy-aware AI matching — mentors are always <strong>2+ levels above, never peers or direct managers</strong>. Each match explains <em>why</em> this mentor is relevant. And critically: exploration is <strong>100% private</strong> until the employee sends a request.",
+   action:()=>{showPage('connect');showConnectTab('mentors-tab');setTimeout(()=>spotlight('mentor-privacy-card'),300)},after:()=>clearSpotlight()},
+
+  // 11: Informational Interviews
+  {label:"Chapter 4",chapter:"Informational Interviews",dur:6500,
+   narration:"<strong>Informational interviews</strong> let employees explore teams before applying. The team member only sees \"A Microsoft employee is curious about your team\" — <em>identity stays private</em>. This removes the fear of being seen as \"looking\" and dramatically increases internal mobility by making exploration safe.",
+   action:()=>{showConnectTab('infointerviews-tab');setTimeout(()=>{hlEl('ii-CopilotPlatform');setTimeout(()=>{unhlEl('ii-CopilotPlatform');openModal('schedule-modal')},1500)},400)}},
+
+  // 12: Schedule
+  {label:"Chapter 4",chapter:"One-Click Scheduling",dur:5500,
+   narration:"Scheduling happens in two clicks. Pick a slot, it shows up in Teams. The entire flow — from curiosity to conversation — takes <strong>under 30 seconds</strong>. Compare that to today's process of finding someone's email, writing a cold message, and hoping for a reply.",
+   action:()=>{setTimeout(()=>{document.getElementById('slot2').classList.add('selected')},600);setTimeout(()=>closeModal('schedule-modal'),4800)}},
+
+  // 13: My Career - Skills
+  {label:"Chapter 5",chapter:"Skills Intelligence",dur:6500,
+   narration:"The <strong>My Career</strong> section starts with <strong>Skills Intelligence</strong> — a data-driven view of the employee's capabilities mapped against market demand. It pulls from project history, Microsoft Learn completions, and LinkedIn data. Green means they're strong, amber means growing, red means gap. The <strong>market demand panel</strong> shows which of their skills are hot — and which ones they need to build.",
+   action:()=>{closeModal('schedule-modal');showPage('career');showCareerTab('skills-tab');setTimeout(()=>spotlight('skills-dna-card'),300)},after:()=>clearSpotlight()},
+
+  // 14: Career Paths
+  {label:"Chapter 5",chapter:"Career Path Simulator",dur:6500,
+   narration:"The <strong>Career Path Simulator</strong> lets employees explore \"What If\" scenarios. Stay IC, move to management, switch disciplines, or explore a new org — each path shows the next role, timeline, skill gaps, and <em>how many positions are open right now</em>. Selecting a path generates a <strong>personalized roadmap</strong> with learning, doing, and connecting milestones.",
+   action:()=>{showCareerTab('paths-tab');setTimeout(()=>spotlight('ic-path'),300)},after:()=>clearSpotlight()},
+
+  // 15: Copilot
+  {label:"Chapter 6",chapter:"Career Copilot AI",dur:7000,
+   narration:"Finally, the <strong>Career Copilot</strong> — available everywhere via the floating button. It's powered by Azure OpenAI with strict guardrails: it <em>never suggests peers as mentors, never reveals salary data, and keeps all exploration private</em>. Employees can ask natural questions like \"What skills do I need for L65?\" and get <strong>personalized, actionable answers</strong>.",
+   action:()=>{
+     document.getElementById('copilot-fab').style.display='none';
+     document.getElementById('copilot-panel').classList.add('open');
+     setTimeout(()=>{addCopilotMsg("What skills do I need for Principal PM?",'user');setTimeout(()=>{addCopilotMsg(`To reach <strong>L65 (Principal PM)</strong>:\n\n✅ <strong>You have:</strong> Product Strategy, Azure (Top 15%), Cross-team Collab\n\n⚠️ <strong>Build these:</strong>\n• LLM/Foundation Models — 78% of L65+ roles need this\n• Platform Thinking — required for all Principal roles\n\nEstimated timeline: <strong>18-24 months</strong> with the right gigs and learning.`,'bot')},1800)},800)
+   }},
+
+  // 16: Closing
+  {label:"Summary",chapter:"Career Navigator — Summary",dur:9000,
+   narration:"<strong>Career Navigator</strong> transforms internal mobility from a frustrating, opaque process into a <em>transparent, intelligent, and deeply personal experience</em>. Every feature is designed around one principle: <strong>make it effortless for employees to grow inside Microsoft</strong>. AI match scores, unlimited saves, persistent search state, hierarchy-aware mentoring, private exploration, interview prep kits, career path simulation, and an always-available AI copilot — all in one platform. <em>This is what world-class internal career development looks like.</em>",
+   action:()=>{
+     document.getElementById('copilot-panel').classList.remove('open');
+     document.getElementById('copilot-fab').style.display='flex';
+     showPage('home');
+   }},
+];
+
+// ═══════════════════════════════════════════════
+// DEMO CONTROLS
+// ═══════════════════════════════════════════════
+function buildTimeline(){
+  const tl=document.getElementById('timeline');
+  tl.innerHTML=SCENES.map((s,i)=>`<div class="tl-dot" id="tl-${i}" onclick="jumpTo(${i})"><div class="tl-fill"></div><div class="tl-label">${s.chapter}</div></div>`).join('');
+}
+
+function startDemo(){
+  buildTimeline();
+  document.getElementById('title-screen').classList.add('hide');
+  setTimeout(()=>{
+    document.getElementById('title-screen').style.display='none';
+    document.getElementById('narration-bar').classList.add('show');
+    document.getElementById('timeline').classList.add('show');
+    document.getElementById('controls').classList.add('show');
+    document.getElementById('chapter-label').classList.add('show');
+    playScene(0);
+  },800);
+}
+
+function playScene(idx){
+  if(idx>=SCENES.length){endDemo();return}
+  currentScene=idx;
+  const sc=SCENES[idx];
+
+  // Transition
+  const trans=document.getElementById('scene-trans');
+  trans.classList.add('show');
+  setTimeout(()=>trans.classList.remove('show'),400);
+
+  // Update narration
+  document.getElementById('scene-label').textContent=sc.label;
+  document.getElementById('narration-text').innerHTML=sc.narration;
+  document.getElementById('chapter-label').textContent=`${idx+1}/${SCENES.length}  ·  ${sc.chapter}`;
+
+  // Update timeline
+  document.querySelectorAll('.tl-dot').forEach((d,i)=>{
+    d.classList.remove('active','current');
+    d.querySelector('.tl-fill').style.width='';
+    d.querySelector('.tl-fill').style.animation='';
+    if(i<idx) d.classList.add('active');
+    if(i===idx){d.classList.add('current');d.style.setProperty('--scene-dur',sc.dur+'ms');d.querySelector('.tl-fill').style.animation=`fillBar ${sc.dur}ms linear forwards`}
+  });
+
+  // Execute action
+  setTimeout(()=>{if(sc.action)sc.action()},300);
+
+  // Schedule next
+  clearTimeout(sceneTimer);
+  if(!paused){
+    sceneTimer=setTimeout(()=>{
+      if(sc.after)sc.after();
+      playScene(idx+1);
+    },sc.dur);
+  }
+}
+
+function nextScene(){
+  clearTimeout(sceneTimer);
+  const sc=SCENES[currentScene];
+  if(sc&&sc.after)sc.after();
+  playScene(currentScene+1);
+}
+function prevScene(){
+  clearTimeout(sceneTimer);
+  const sc=SCENES[currentScene];
+  if(sc&&sc.after)sc.after();
+  playScene(Math.max(0,currentScene-1));
+}
+function jumpTo(idx){
+  clearTimeout(sceneTimer);
+  const sc=SCENES[currentScene];
+  if(sc&&sc.after)sc.after();
+  playScene(idx);
+}
+function togglePause(){
+  paused=!paused;
+  document.getElementById('pause-btn').textContent=paused?'▶':'⏸';
+  if(!paused){
+    // Resume — play remaining time (simplified: restart scene)
+    playScene(currentScene);
+  }else{
+    clearTimeout(sceneTimer);
+    // Pause fill animation
+    document.querySelectorAll('.tl-dot.current .tl-fill').forEach(f=>{
+      const w=getComputedStyle(f).width;
+      f.style.animation='none';
+      f.style.width=w;
+    });
+  }
+}
+function endDemo(){
+  document.getElementById('narration-text').innerHTML="<strong>Thank you for watching.</strong> Career Navigator — reimagining how Microsoft employees grow their careers.";
+  document.getElementById('scene-label').textContent="End of Demo";
+  document.getElementById('chapter-label').textContent="Demo Complete";
+  document.querySelectorAll('.tl-dot').forEach(d=>d.classList.add('active'));
+}
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function spotlight(elId){
+  const el=document.getElementById(elId);if(!el)return;
+  const r=el.getBoundingClientRect();
+  const s=document.getElementById('spotlight');
+  s.style.top=(r.top-6)+'px';s.style.left=(r.left-6)+'px';
+  s.style.width=(r.width+12)+'px';s.style.height=(r.height+12)+'px';
+  s.classList.add('show');
+}
+function clearSpotlight(){document.getElementById('spotlight').classList.remove('show')}
+
+function hlEl(id){const e=document.getElementById(id);if(e)e.classList.add('hl')}
+function unhlEl(id){const e=document.getElementById(id);if(e)e.classList.remove('hl')}
+
+function typeInto(elId,text,speed){
+  const el=document.getElementById(elId);if(!el)return;
+  el.value='';el.focus();
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i<text.length){el.value+=text[i];i++}
+    else clearInterval(iv);
+  },speed);
+}
+
+function addCopilotMsg(text,type){
+  const msgs=document.getElementById('copilot-messages');
+  const d=document.createElement('div');
+  d.className='copilot-msg '+type;
+  d.innerHTML=text.replace(/\n/g,'<br>');
+  msgs.appendChild(d);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if(e.key===' '||e.key==='k'){e.preventDefault();togglePause()}
+  if(e.key==='ArrowRight'||e.key==='l')nextScene();
+  if(e.key==='ArrowLeft'||e.key==='j')prevScene();
+});
+</script>
+</body>
+</html>
